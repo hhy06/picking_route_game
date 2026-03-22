@@ -140,8 +140,8 @@
         </div>
 
         <div class="controls">
-          <button @click="undoWaypoint" :disabled="selectedWaypoints.length === 0 || gameState !== 'planning'">撤销</button>
-          <button @click="clearWaypoints" :disabled="selectedWaypoints.length === 0 || gameState !== 'planning'">清空</button>
+          <button @click="undoWaypoint" :disabled="selectedWaypoints.length === 0">撤销</button>
+          <button @click="clearWaypoints">清空</button>
           <button @click="startGame" :disabled="selectedWaypoints.length !== orderSkus.length || gameState !== 'planning'">开始比赛</button>
         </div>
       </div>
@@ -357,6 +357,13 @@ function undoWaypoint() {
 
 function clearWaypoints() {
   selectedWaypoints.value = []
+  humanRoute.value = []
+  humanRouteSegments.value = []
+  humanDistance.value = null
+  aiRoute.value = []
+  aiRouteSegments.value = []
+  aiDistance.value = null
+  gameState.value = 'planning'
 }
 
 async function startGame() {

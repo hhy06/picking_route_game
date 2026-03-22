@@ -43,29 +43,21 @@ def generate_warehouse_map(a=None, k=None, b=None):
     }
 
 
-def get_adjacent_walkable_points(map_data):
+def get_sku_positions(map_data):
     shelves = map_data["shelves"]
     walkable = set(tuple(p) for p in map_data["walkable_points"])
-    grid = map_data["map"]
-    
-    pickup_points = []
+    sku_positions = []
     
     for shelf_r, shelf_c in shelves:
-        for dr, dc in DIRECTIONS:
+        for dr, dc in [(-1, 0), (1, 0)]:
             adj_r, adj_c = shelf_r + dr, shelf_c + dc
             if (0 <= adj_r < map_data["rows"] and 
                 0 <= adj_c < map_data["cols"] and
                 (adj_r, adj_c) in walkable):
-                pickup_points.append([adj_r, adj_c])
+                if [adj_r, adj_c] not in sku_positions:
+                    sku_positions.append([adj_r, adj_c])
     
-    unique_pickup = []
-    seen = set()
-    for p in pickup_points:
-        if tuple(p) not in seen:
-            seen.add(tuple(p))
-            unique_pickup.append(p)
-    
-    return unique_pickup
+    return sku_positions
 
 
 def get_shelf_locations(map_data):
@@ -75,12 +67,12 @@ def get_shelf_locations(map_data):
 def generate_random_order(map_data, num_skus=None):
     num_skus = num_skus if num_skus is not None else DEFAULT_NUM_SKUS
     
-    pickup_points = get_adjacent_walkable_points(map_data)
+    sku_positions = get_sku_positions(map_data)
     
-    if len(pickup_points) < num_skus:
-        num_skus = len(pickup_points)
+    if len(sku_positions) < num_skus:
+        num_skus = len(sku_positions)
     
-    selected = random.sample(pickup_points, num_skus)
+    selected = random.sample(sku_positions, num_skus)
     
     skus = []
     for i, point in enumerate(selected):

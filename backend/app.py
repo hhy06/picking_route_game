@@ -40,12 +40,12 @@ def api_generate_order():
     
     data = request.get_json() or {}
     
-    a = data.get('a', DEFAULT_A)
+    x = data.get('x', DEFAULT_A)
     k = data.get('k', DEFAULT_K)
     b = data.get('b', DEFAULT_B)
     num_skus = data.get('num_skus', DEFAULT_NUM_SKUS)
     
-    current_map_data = generate_warehouse_map(a, k, b)
+    current_map_data = generate_warehouse_map(x, k, b)
     current_order = generate_random_order(current_map_data, num_skus)
     
     return jsonify({
@@ -154,6 +154,7 @@ def api_route_from_waypoints():
         return jsonify({"success": False, "error": "地图未初始化"}), 500
     
     waypoints = data.get('waypoints', [])
+    return_to_start = data.get('return_to_start', True)
     
     if not waypoints:
         return jsonify({"success": False, "error": "需要指定路点序列"}), 400
@@ -161,7 +162,9 @@ def api_route_from_waypoints():
     from .shortest_path import shortest_path_sequence, calculate_route_distance
     
     start = current_map_data["start"]
-    all_points = [start] + waypoints + [start]
+    all_points = [start] + waypoints
+    if return_to_start:
+        all_points.append(start)
     
     full_route = []
     total_distance = 0

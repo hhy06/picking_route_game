@@ -4,9 +4,7 @@
       <h1>拣货路线比赛</h1>
       <div class="header-controls">
         <button @click="generateNewOrder">新订单</button>
-        <select v-model="mapParams.a" @change="generateNewOrder">
-          <option v-for="a in [1,2,3,4,5]" :key="a" :value="a">行数: {{2*a+1}}</option>
-        </select>
+        <label>行数 <input type="number" v-model.number="mapParams.x" min="2" max="6" @change="generateNewOrder" /></label>
         <select v-model="mapParams.k" @change="generateNewOrder">
           <option v-for="k in [2,3,4,5]" :key="k" :value="k">段数: {{k}}</option>
         </select>
@@ -183,7 +181,7 @@ const humanBall = ref({ x: 0, y: 0 })
 const aiBall = ref({ x: 0, y: 0 })
 
 const mapParams = ref({
-  a: 3,
+  x: 4,
   k: 4,
   b: 3,
   numSkus: 5
@@ -217,7 +215,7 @@ async function loadMapInfo() {
 async function generateNewOrder() {
   try {
     const res = await axios.post(`${API_BASE}/generate_order`, {
-      a: mapParams.value.a,
+      x: mapParams.value.x,
       k: mapParams.value.k,
       b: mapParams.value.b,
       num_skus: mapParams.value.numSkus
@@ -249,7 +247,24 @@ async function calculateHumanRoute() {
   }
   try {
     const res = await axios.post(`${API_BASE}/route_from_waypoints`, {
-      waypoints: selectedWaypoints.value
+      waypoints: selectedWaypoints.value,
+      return_to_start: false
+    })
+    if (res.data.success) {
+      humanRoute.value = res.data.route
+      humanDistance.value = res.data.total_distance
+      humanRouteSegments.value = computeSegments(res.data.route, false)
+    }
+  } catch (e) {
+    console.error('Failed to calculate human route:', e)
+  }
+}
+
+async function calculateHumanRouteFull() {
+  try {
+    const res = await axios.post(`${API_BASE}/route_from_waypoints`, {
+      waypoints: selectedWaypoints.value,
+      return_to_start: true
     })
     if (res.data.success) {
       humanRoute.value = res.data.route
@@ -354,6 +369,7 @@ async function startGame() {
   if (selectedWaypoints.value.length !== orderSkus.value.length) return
   if (humanRoute.value.length === 0) return
   
+  await calculateHumanRouteFull()
   await calculateAiRoute()
   
   gameState.value = 'running'
@@ -424,10 +440,19 @@ onMounted(async () => {
   align-items: center;
 }
 
-.header-controls select {
+.header-controls select, .header-controls input[type="number"] {
   padding: 0.5rem;
   border-radius: 0.25rem;
   border: none;
+  width: 70px;
+}
+
+.header-controls label {
+  color: white;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .header-controls button {

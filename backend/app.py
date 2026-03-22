@@ -1,4 +1,7 @@
 from flask import Flask, request, jsonify
+import os
+import json
+from datetime import datetime
 from .constants import DEFAULT_A, DEFAULT_K, DEFAULT_B, DEFAULT_NUM_SKUS, WALKABLE, SHELF
 from .data_generator import generate_warehouse_map, generate_random_order, get_all_points_for_tsp
 from .tsp_solver import shorted_round_trip, validate_route
@@ -194,6 +197,34 @@ def api_route_from_waypoints():
         "route": full_route,
         "total_distance": total_distance
     })
+
+
+@app.route('/api/record_result', methods=['POST'])
+def api_record_result():
+    data = request.get_json() or {}
+
+    result_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "map_params": data.get("map_params", {}),
+        "order_skus": data.get("order_skus", []),
+        "user_waypoints": data.get("user_waypoints", []),
+        "user_route": data.get("user_route", []),
+        "ai_route": data.get("ai_route", []),
+        "user_distance": data.get("user_distance"),
+        "ai_distance": data.get("ai_distance"),
+        "winner": data.get("winner"),
+    }
+
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    result_file = os.path.join(project_root, "match_results.txt")
+
+    try:
+        with open(result_file, "a", encoding="utf-8") as f:
+            f.write(json.dumps(result_entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    return jsonify({"success": True})
 
 
 if __name__ == '__main__':

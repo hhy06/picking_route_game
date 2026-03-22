@@ -4,10 +4,10 @@
       <h1>拣货路线比赛</h1>
       <div class="header-controls">
         <button @click="generateNewOrder">新订单</button>
-        <label>行数 <input type="number" v-model.number="mapParams.x" min="2" max="4" @change="generateNewOrder" /></label>
-        <label>段数 <input type="number" v-model.number="mapParams.k" min="2" max="6" @change="generateNewOrder" /></label>
-        <label>货架数/段 <input type="number" v-model.number="mapParams.b" min="2" max="6" @change="generateNewOrder" /></label>
-        <label>SKU数 <input type="number" v-model.number="mapParams.numSkus" min="3" max="10" @change="generateNewOrder" /></label>
+        <label>行数 <input type="number" v-model.number="mapParams.x" min="1" @change="generateNewOrder" /></label>
+        <label>段数 <input type="number" v-model.number="mapParams.k" min="1" @change="generateNewOrder" /></label>
+        <label>货架数/段 <input type="number" v-model.number="mapParams.b" min="1" @change="generateNewOrder" /></label>
+        <label>SKU数 <input type="number" v-model.number="mapParams.numSkus" min="1" @change="generateNewOrder" /></label>
       </div>
     </header>
 
@@ -87,15 +87,15 @@
           />
 
           <circle
-            :cx="humanBall.x * cellSize + cellSize/2"
-            :cy="humanBall.y * cellSize + cellSize/2"
+            :cx="humanBall.x * cellSize + cellSize/2 + cellSize * 0.15"
+            :cy="humanBall.y * cellSize + cellSize/2 - cellSize * 0.15"
             :r="cellSize/4"
             fill="#3b82f6"
             v-show="gameState === 'running' || gameState === 'finished'"
           />
           <circle
-            :cx="aiBall.x * cellSize + cellSize/2"
-            :cy="aiBall.y * cellSize + cellSize/2"
+            :cx="aiBall.x * cellSize + cellSize/2 - cellSize * 0.15"
+            :cy="aiBall.y * cellSize + cellSize/2 + cellSize * 0.15"
             :r="cellSize/4"
             fill="#ef4444"
             v-show="gameState === 'running' || gameState === 'finished'"
@@ -180,6 +180,8 @@ const mapParams = ref({
   b: 3,
   numSkus: 5
 })
+
+const MATCH_RESULTS_FILE = 'match_results.txt'
 
 const canvasWidth = computed(() => cols.value * cellSize)
 const canvasHeight = computed(() => rows.value * cellSize)
@@ -394,15 +396,41 @@ async function startGame() {
     if (humanIdx >= humanRoute.value.length - 1 && aiIdx >= aiRoute.value.length - 1) {
       clearInterval(interval)
       gameState.value = 'finished'
+      recordMatchResult()
     }
   }, 200)
 }
 
+function getWinner() {
+  if (humanDistance.value === null || aiDistance.value === null) return 'unknown'
+  if (humanDistance.value < aiDistance.value) return 'human'
+  if (humanDistance.value > aiDistance.value) return 'ai'
+  return 'draw'
+}
+
+async function recordMatchResult() {
+  try {
+    await axios.post(`${API_BASE}/record_result`, {
+      map_params: { x: mapParams.value.x, k: mapParams.value.k, b: mapParams.value.b },
+      order_skus: orderSkus.value,
+      user_waypoints: selectedWaypoints.value,
+      user_route: humanRoute.value,
+      ai_route: aiRoute.value,
+      user_distance: humanDistance.value,
+      ai_distance: aiDistance.value,
+      winner: getWinner()
+    })
+  } catch (e) {
+    console.error('Failed to record match result:', e)
+  }
+}
+
 function getResultText() {
-  if (humanDistance.value === null || aiDistance.value === null) return ''
-  if (humanDistance.value < aiDistance.value) return '你赢了！'
-  if (humanDistance.value > aiDistance.value) return 'AI赢了'
-  return '平局！'
+  const w = getWinner()
+  if (w === 'human') return '你赢了！'
+  if (w === 'ai') return 'AI赢了'
+  if (w === 'draw') return '平局！'
+  return ''
 }
 
 watch(selectedWaypoints, () => {

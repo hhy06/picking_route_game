@@ -4,16 +4,10 @@
       <h1>拣货路线比赛</h1>
       <div class="header-controls">
         <button @click="generateNewOrder">新订单</button>
-        <label>行数 <input type="number" v-model.number="mapParams.x" min="2" max="6" @change="generateNewOrder" /></label>
-        <select v-model="mapParams.k" @change="generateNewOrder">
-          <option v-for="k in [2,3,4,5]" :key="k" :value="k">段数: {{k}}</option>
-        </select>
-        <select v-model="mapParams.b" @change="generateNewOrder">
-          <option v-for="b in [2,3,4,5]" :key="b" :value="b">货架数/段: {{b}}</option>
-        </select>
-        <select v-model="mapParams.numSkus" @change="generateNewOrder">
-          <option v-for="n in [3,4,5,6,7,8]" :key="n" :value="n">SKU数: {{n}}</option>
-        </select>
+        <label>行数 <input type="number" v-model.number="mapParams.x" min="2" max="4" @change="generateNewOrder" /></label>
+        <label>段数 <input type="number" v-model.number="mapParams.k" min="2" max="6" @change="generateNewOrder" /></label>
+        <label>货架数/段 <input type="number" v-model.number="mapParams.b" min="2" max="6" @change="generateNewOrder" /></label>
+        <label>SKU数 <input type="number" v-model.number="mapParams.numSkus" min="3" max="10" @change="generateNewOrder" /></label>
       </div>
     </header>
 
@@ -444,7 +438,7 @@ onMounted(async () => {
   padding: 0.5rem;
   border-radius: 0.25rem;
   border: none;
-  width: 70px;
+  width: 140px;
 }
 
 .header-controls label {

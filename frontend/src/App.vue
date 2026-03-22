@@ -280,35 +280,19 @@ async function calculateAiRoute() {
 function computeSegments(route, isAi = false) {
   if (route.length < 2) return []
   const segments = []
-  const OFFSET = 0.18
+  const OFFSET = 0.15
+  const dir = isAi ? -1 : 1
   for (let i = 0; i < route.length - 1; i++) {
     const r1 = route[i][0], c1 = route[i][1]
     const r2 = route[i + 1][0], c2 = route[i + 1][1]
     const dr = r2 - r1, dc = c2 - c1
-    let isReturn = false
-    if (i > 0) {
-      const pr = route[i][0] - route[i - 1][0]
-      const pc = route[i][1] - route[i - 1][1]
-      if (dr === -pr && dc === -pc) {
-        isReturn = true
-      }
-    }
-    let ox1 = 0, oy1 = 0, ox2 = 0, oy2 = 0
-    if (isReturn) {
-      if (dr !== 0) {
-        ox1 = OFFSET
-        ox2 = OFFSET
-      } else {
-        oy1 = OFFSET
-        oy2 = OFFSET
-      }
-    }
-    const dir = isAi ? -1 : 1
+    const ox = -dr * OFFSET * dir
+    const oy = -dc * OFFSET * dir
     segments.push({
-      x1: c1 + ox1 * dir,
-      y1: r1 + oy1 * dir,
-      x2: c2 + ox2 * dir,
-      y2: r2 + oy2 * dir
+      x1: c1 + ox,
+      y1: r1 + oy,
+      x2: c2 + ox,
+      y2: r2 + oy
     })
   }
   return segments

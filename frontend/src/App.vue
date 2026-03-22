@@ -97,14 +97,14 @@
           <circle
             :cx="humanBall.x * cellSize + cellSize/2"
             :cy="humanBall.y * cellSize + cellSize/2"
-            r="cellSize/4"
+            :r="cellSize/4"
             fill="#3b82f6"
             v-show="gameState === 'running' || gameState === 'finished'"
           />
           <circle
             :cx="aiBall.x * cellSize + cellSize/2"
             :cy="aiBall.y * cellSize + cellSize/2"
-            r="cellSize/4"
+            :r="cellSize/4"
             fill="#ef4444"
             v-show="gameState === 'running' || gameState === 'finished'"
           />
@@ -254,7 +254,7 @@ async function calculateHumanRoute() {
     if (res.data.success) {
       humanRoute.value = res.data.route
       humanDistance.value = res.data.total_distance
-      humanRouteSegments.value = computeSegments(res.data.route)
+      humanRouteSegments.value = computeSegments(res.data.route, false)
     }
   } catch (e) {
     console.error('Failed to calculate human route:', e)
@@ -270,21 +270,45 @@ async function calculateAiRoute() {
     if (res.data.success) {
       aiRoute.value = res.data.route
       aiDistance.value = res.data.total_distance
-      aiRouteSegments.value = computeSegments(res.data.route)
+      aiRouteSegments.value = computeSegments(res.data.route, true)
     }
   } catch (e) {
     console.error('Failed to calculate AI route:', e)
   }
 }
 
-function computeSegments(route) {
+function computeSegments(route, isAi = false) {
+  if (route.length < 2) return []
   const segments = []
+  const OFFSET = 0.18
   for (let i = 0; i < route.length - 1; i++) {
+    const r1 = route[i][0], c1 = route[i][1]
+    const r2 = route[i + 1][0], c2 = route[i + 1][1]
+    const dr = r2 - r1, dc = c2 - c1
+    let isReturn = false
+    if (i > 0) {
+      const pr = route[i][0] - route[i - 1][0]
+      const pc = route[i][1] - route[i - 1][1]
+      if (dr === -pr && dc === -pc) {
+        isReturn = true
+      }
+    }
+    let ox1 = 0, oy1 = 0, ox2 = 0, oy2 = 0
+    if (isReturn) {
+      if (dr !== 0) {
+        ox1 = OFFSET
+        ox2 = OFFSET
+      } else {
+        oy1 = OFFSET
+        oy2 = OFFSET
+      }
+    }
+    const dir = isAi ? -1 : 1
     segments.push({
-      x1: route[i][1],
-      y1: route[i][0],
-      x2: route[i + 1][1],
-      y2: route[i + 1][0]
+      x1: c1 + ox1 * dir,
+      y1: r1 + oy1 * dir,
+      x2: c2 + ox2 * dir,
+      y2: r2 + oy2 * dir
     })
   }
   return segments
@@ -344,6 +368,7 @@ function clearWaypoints() {
 
 async function startGame() {
   if (selectedWaypoints.value.length !== orderSkus.value.length) return
+  if (humanRoute.value.length === 0) return
   
   await calculateAiRoute()
   

@@ -571,10 +571,11 @@ h2 {
 
 .sku-point {
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: filter 0.15s;
+  filter: drop-shadow(0 0 0 transparent);
 }
 
 .sku-point:hover {
-  transform: scale(1.2);
+  filter: drop-shadow(0 0 4px #fde047) drop-shadow(0 0 8px #fde047);
 }
 </style>

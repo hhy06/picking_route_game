@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import os
 import json
 from datetime import datetime
@@ -19,6 +19,19 @@ def initialize_map():
 
 
 initialize_map()
+
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DIST_DIR = os.path.join(PROJECT_ROOT, 'frontend', 'dist')
+
+
+@app.route('/')
+def serve_index():
+    return send_from_directory(DIST_DIR, 'index.html')
+
+
+@app.route('/assets/<path:filename>')
+def serve_assets(filename):
+    return send_from_directory(os.path.join(DIST_DIR, 'assets'), filename)
 
 
 @app.route('/api/map_info', methods=['GET'])
@@ -215,8 +228,7 @@ def api_record_result():
         "winner": data.get("winner"),
     }
 
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    result_file = os.path.join(project_root, "match_results.txt")
+    result_file = os.path.join(PROJECT_ROOT, "match_results.txt")
 
     try:
         with open(result_file, "a", encoding="utf-8") as f:
@@ -225,6 +237,13 @@ def api_record_result():
         return jsonify({"success": False, "error": str(e)}), 500
 
     return jsonify({"success": True})
+
+
+@app.errorhandler(404)
+def not_found(e):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Not found"}), 404
+    return send_from_directory(DIST_DIR, 'index.html')
 
 
 if __name__ == '__main__':
